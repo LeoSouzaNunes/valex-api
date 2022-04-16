@@ -20,8 +20,13 @@ export async function checkIsValidEmployeeAndCreateCard(
 ) {
     const employeeFullName = await isEmployee(employeeId);
     await checkEmployeeHasCard(employeeId, type);
-    const cardData = formatCardData(employeeId, employeeFullName, type);
-    return cardData;
+    const [safeCardData, plainCardData] = formatCardData(
+        employeeId,
+        employeeFullName,
+        type
+    );
+    await cardRepo.insert(safeCardData);
+    return plainCardData;
 }
 
 function formatCardData(
@@ -31,7 +36,7 @@ function formatCardData(
 ) {
     const plainSecurityCode = faker.finance.creditCardCVV();
 
-    const cardHolderName = formatName(employeeFullName);
+    const cardholderName = formatName(employeeFullName);
     const number = faker.finance.creditCardNumber("Mastercard");
     const securityCode = bcrypt.hashSync(plainSecurityCode, 10);
     const expirationDate = dayjs().add(5, "year").format("MM/YY");
@@ -39,7 +44,7 @@ function formatCardData(
     const safeCardData = {
         employeeId,
         number,
-        cardHolderName,
+        cardholderName,
         securityCode,
         expirationDate,
         password: null,
@@ -58,14 +63,14 @@ async function checkEmployeeHasCard(
 ) {
     const hasCard = await cardRepo.findByTypeAndEmployeeId(type, employeeId);
     if (hasCard) {
-        throw error.conflict("Card already exist.");
+        throw error.conflict("Card already exists.");
     }
 }
 
 async function isEmployee(employeeId: number) {
     const employeeData = await findById(employeeId);
     if (!employeeData) {
-        throw error.notFound("Didn't find employee data.");
+        throw error.notFound("Employee not found.");
     }
     return employeeData.fullName;
 }
