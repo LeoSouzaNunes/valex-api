@@ -29,6 +29,38 @@ export async function checkIsValidEmployeeAndCreateCard(
     return plainCardData;
 }
 
+export async function findCards(employeeId: number) {
+    const cards = await cardRepo.findByEmployeeId(employeeId);
+    return cards;
+}
+
+export async function activateCard(
+    cardId: number,
+    cvv: string,
+    password: string
+) {
+    const { expirationDate, securityCode } = await checkCardExists(cardId);
+    console.log(expirationDate, securityCode);
+    checkIsValidExpirationDate(expirationDate);
+    return true;
+}
+
+function checkIsValidExpirationDate(expirationDate: string) {
+    const actualDate = dayjs().valueOf();
+    const limitDate = dayjs(expirationDate).valueOf();
+    console.log("actualDate " + actualDate, "limitDate " + limitDate);
+    const difference = limitDate > actualDate;
+    console.log("Difference " + difference);
+}
+
+async function checkCardExists(cardId: number) {
+    const cardData = await cardRepo.findById(cardId);
+    if (!cardData) {
+        throw error.notFound("Card not found.");
+    }
+    return cardData;
+}
+
 function formatCardData(
     employeeId: number,
     employeeFullName: string,

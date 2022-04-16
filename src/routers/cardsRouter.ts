@@ -1,15 +1,28 @@
 import { Router } from "express";
-import { postCard } from "../controllers/cardsController.js";
+import * as controller from "../controllers/cardsController.js";
+import ensureNumberOnParamsMiddleware from "../middlewares/ensureNumberOnParamsMiddleware.js";
 import validateKeyMiddleware from "../middlewares/validateKeyMiddleware.js";
 import validateSchemaMiddleware from "../middlewares/validateSchemaMiddleware.js";
-import cardSchema from "../schemas/cardSchema.js";
+import * as schemas from "../schemas/index.js";
 
 const cardsRouter = Router();
 cardsRouter.post(
     "/cards",
     validateKeyMiddleware,
-    validateSchemaMiddleware(cardSchema),
-    postCard
+    validateSchemaMiddleware(schemas.cardSchema),
+    controller.postCard
 );
 
+cardsRouter.get(
+    "/cards/:employeeId",
+    ensureNumberOnParamsMiddleware("employeeId"),
+    controller.getCards
+);
+
+cardsRouter.put(
+    "/cards/:cardId",
+    ensureNumberOnParamsMiddleware("cardId"),
+    validateSchemaMiddleware(schemas.activationCardSchema),
+    controller.updateCard
+);
 export default cardsRouter;

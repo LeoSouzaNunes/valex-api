@@ -7,3 +7,6 @@ export function conflict(message: string) {
 export function unauthorized(message: string) {
     return { type: "unauthorized", message };
 }
+export function unprocessable(message: string) {
+    return { type: "unprocessable_entity", message };
+}
