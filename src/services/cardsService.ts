@@ -1,6 +1,8 @@
 import { findById } from "../repositories/employeeRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
 import * as cardRepo from "../repositories/cardRepository.js";
+import * as payments from "../repositories/paymentRepository.js";
+import * as recharges from "../repositories/rechargeRepository.js";
 import * as error from "../utils/errorUtils.js";
 import * as encrypt from "../utils/hashDataUtils.js";
 import faker from "@faker-js/faker";
@@ -45,6 +47,14 @@ export async function activateCard(
     validateCVV(plainCVV, cardData.securityCode);
     const encryptedPassword = encrypt.hashData(cardPassword);
     await cardRepo.update(cardId, { ...cardData, password: encryptedPassword });
+}
+
+export async function findCardTrades(cardId: number) {
+    await checkCardExists(cardId);
+    const paymentsData = await payments.findByCardId(cardId);
+    const rechargeData = await recharges.findByCardId(cardId);
+
+    return { paymentsData, rechargeData };
 }
 
 function validateCVV(plainCVV: string, encryptedCVV: string) {

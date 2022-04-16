@@ -24,3 +24,9 @@ export async function updateCard(req: Request, res: Response) {
     await service.activateCard(cardId, cvv, password);
     res.sendStatus(200);
 }
+
+export async function getCardTrades(req: Request, res: Response) {
+    const cardId = res.locals.param;
+    const data = await service.findCardTrades(cardId);
+    res.status(200).send(data);
+}

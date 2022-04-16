@@ -19,6 +19,12 @@ cardsRouter.get(
     controller.getCards
 );
 
+cardsRouter.get(
+    "/cards/:cardId/trades",
+    ensureNumberOnParamsMiddleware("cardId"),
+    controller.getCardTrades
+);
+
 cardsRouter.put(
     "/cards/:cardId",
     ensureNumberOnParamsMiddleware("cardId"),
