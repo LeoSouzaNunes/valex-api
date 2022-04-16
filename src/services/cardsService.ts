@@ -2,8 +2,8 @@ import { findById } from "../repositories/employeeRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
 import * as cardRepo from "../repositories/cardRepository.js";
 import * as error from "../utils/errorUtils.js";
+import * as encrypt from "../utils/hashDataUtils.js";
 import faker from "@faker-js/faker";
-import bcrypt from "bcrypt";
 import dayjs from "dayjs";
 
 export async function checkKey(key: any) {
@@ -36,21 +36,43 @@ export async function findCards(employeeId: number) {
 
 export async function activateCard(
     cardId: number,
-    cvv: string,
-    password: string
+    plainCVV: string,
+    cardPassword: string
 ) {
-    const { expirationDate, securityCode } = await checkCardExists(cardId);
-    console.log(expirationDate, securityCode);
-    checkIsValidExpirationDate(expirationDate);
-    return true;
+    const cardData = await checkCardExists(cardId);
+    checkCardIsExpired(cardData.expirationDate);
+    checkIsAlreadyActive(cardData.password);
+    validateCVV(plainCVV, cardData.securityCode);
+    const encryptedPassword = encrypt.hashData(cardPassword);
+    await cardRepo.update(cardId, { ...cardData, password: encryptedPassword });
 }
 
-function checkIsValidExpirationDate(expirationDate: string) {
+function validateCVV(plainCVV: string, encryptedCVV: string) {
+    if (!encrypt.validateHashData(plainCVV, encryptedCVV)) {
+        throw error.unauthorized("Invalid CVV.");
+    }
+}
+
+function checkIsAlreadyActive(password: string) {
+    if (password !== null) {
+        throw error.conflict("Card already activated.");
+    }
+}
+
+function checkCardIsExpired(expirationDate: string) {
+    const formattedLimitDate = formatDate(expirationDate);
     const actualDate = dayjs().valueOf();
-    const limitDate = dayjs(expirationDate).valueOf();
-    console.log("actualDate " + actualDate, "limitDate " + limitDate);
-    const difference = limitDate > actualDate;
-    console.log("Difference " + difference);
+    const limitDate = dayjs(`${formattedLimitDate}`).valueOf();
+    const diff = limitDate - actualDate;
+    if (diff < 0) {
+        throw error.unauthorized("Card has expired.");
+    }
+}
+
+function formatDate(shortenedDate: string) {
+    const datePieces = shortenedDate.split("/");
+    const formattedDate = `20${datePieces[1]}-${datePieces[0]}-15`;
+    return formattedDate;
 }
 
 async function checkCardExists(cardId: number) {
@@ -70,7 +92,7 @@ function formatCardData(
 
     const cardholderName = formatName(employeeFullName);
     const number = faker.finance.creditCardNumber("Mastercard");
-    const securityCode = bcrypt.hashSync(plainSecurityCode, 10);
+    const securityCode = encrypt.hashData(plainSecurityCode);
     const expirationDate = dayjs().add(5, "year").format("MM/YY");
 
     const safeCardData = {

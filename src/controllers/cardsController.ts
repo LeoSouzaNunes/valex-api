@@ -22,5 +22,5 @@ export async function updateCard(req: Request, res: Response) {
     const { cvv, password } = req.body;
 
     await service.activateCard(cardId, cvv, password);
-    res.status(200).send({ cardId });
+    res.sendStatus(200);
 }
