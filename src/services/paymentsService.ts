@@ -21,6 +21,27 @@ export async function depositsPayment(
     await approvePayment(totalBalance, amount, cardId, businessId);
 }
 
+export async function depositsOnlinePayment(
+    number: string,
+    name: string,
+    cvv: string,
+    expirationDate: string,
+    businessId: number,
+    amount: number
+) {
+    const cardData = await checkCardExistsByDetails(
+        number,
+        name,
+        expirationDate
+    );
+    validateCVV(cvv, cardData.securityCode);
+    checkCardIsUnblocked(cardData);
+    checkCardIsExpired(expirationDate);
+    await validateBusiness(businessId, cardData.type);
+    const totalBalance = await calculateBalance(cardData.id);
+    await approvePayment(totalBalance, amount, cardData.id, businessId);
+}
+
 async function approvePayment(
     totalBalance: number,
     amount: number,
@@ -113,5 +134,27 @@ function returnTotalSum(array: any[]) {
 function checkCardIsUnblocked({ isBlocked }) {
     if (isBlocked) {
         throw error.unauthorized("Card blocked.");
+    }
+}
+
+async function checkCardExistsByDetails(
+    number: string,
+    cardholderName: string,
+    expirationDate: string
+) {
+    const cardData = await cardRepo.findByCardDetails(
+        number,
+        cardholderName,
+        expirationDate
+    );
+    if (!cardData) {
+        throw error.notFound("Card not found.");
+    }
+    return cardData;
+}
+
+function validateCVV(plainCVV: string, encryptedCVV: string) {
+    if (!encrypt.validateHashData(plainCVV, encryptedCVV)) {
+        throw error.unauthorized("Invalid CVV.");
     }
 }

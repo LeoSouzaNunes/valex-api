@@ -11,3 +11,17 @@ export async function postPayment(req: Request, res: Response) {
     );
     res.sendStatus(201);
 }
+
+export async function postOnlinePayment(req: Request, res: Response) {
+    const { number, name, cvv, expirationDate, businessId, amount } = req.body;
+    await services.depositsOnlinePayment(
+        number,
+        name,
+        cvv,
+        expirationDate,
+        Number(businessId),
+        Number(amount)
+    );
+
+    res.sendStatus(201);
+}

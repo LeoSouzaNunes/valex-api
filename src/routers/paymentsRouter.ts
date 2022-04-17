@@ -10,4 +10,10 @@ paymentsRouter.post(
     controllers.postPayment
 );
 
+paymentsRouter.post(
+    "/payments/online",
+    validateSchemaMiddleware(schemas.onlinePaymentSchema),
+    controllers.postOnlinePayment
+);
+
 export default paymentsRouter;
