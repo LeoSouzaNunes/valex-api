@@ -17,7 +17,7 @@ export async function getCards(req: Request, res: Response) {
     res.status(200).send(cards);
 }
 
-export async function updateCard(req: Request, res: Response) {
+export async function activateCard(req: Request, res: Response) {
     const cardId = res.locals.param;
     const { cvv, password } = req.body;
 
@@ -29,4 +29,20 @@ export async function getCardTrades(req: Request, res: Response) {
     const cardId = res.locals.param;
     const trades = await service.findCardTrades(cardId);
     res.status(200).send(trades);
+}
+
+export async function unblockCard(req: Request, res: Response) {
+    const cardId = res.locals.param;
+    const { password } = req.body;
+
+    await service.unblockCard(cardId, password);
+    res.sendStatus(200);
+}
+
+export async function blockCard(req: Request, res: Response) {
+    const cardId = res.locals.param;
+    const { password } = req.body;
+
+    await service.blockCard(cardId, password);
+    res.sendStatus(200);
 }

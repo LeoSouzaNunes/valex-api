@@ -58,6 +58,22 @@ export async function findCardTrades(cardId: number) {
     return { balance, transactions, recharges };
 }
 
+export async function unblockCard(cardId: number, password: string) {
+    const cardData = await checkCardExists(cardId);
+    checkCardIsExpired(cardData.expirationDate);
+    await checkIsBlockedCard(cardData);
+    validatePassword(password, cardData.password);
+    await cardRepo.update(cardId, { ...cardData, isBlocked: false });
+}
+
+export async function blockCard(cardId: number, password: string) {
+    const cardData = await checkCardExists(cardId);
+    checkCardIsExpired(cardData.expirationDate);
+    await checkIsUnblockedCard(cardData);
+    validatePassword(password, cardData.password);
+    await cardRepo.update(cardId, { ...cardData, isBlocked: true });
+}
+
 function validateCVV(plainCVV: string, encryptedCVV: string) {
     if (!encrypt.validateHashData(plainCVV, encryptedCVV)) {
         throw error.unauthorized("Invalid CVV.");
@@ -183,4 +199,22 @@ function returnTotalSum(array: any[]) {
     }
 
     return totalSum;
+}
+
+async function checkIsBlockedCard({ isBlocked }) {
+    if (!isBlocked) {
+        throw error.badRequest("Card already unblocked.");
+    }
+}
+
+async function checkIsUnblockedCard({ isBlocked }) {
+    if (isBlocked) {
+        throw error.badRequest("Card already blocked.");
+    }
+}
+
+function validatePassword(plainPassword: string, encryptedPassword: string) {
+    if (!encrypt.validateHashData(plainPassword, encryptedPassword)) {
+        throw error.unauthorized("Invalid password.");
+    }
 }

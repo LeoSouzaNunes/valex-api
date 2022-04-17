@@ -24,11 +24,25 @@ cardsRouter.get(
     ensureNumberOnParamsMiddleware("cardId"),
     controller.getCardTrades
 );
+cardsRouter.put(
+    "/cards/:cardId/unblock",
+    ensureNumberOnParamsMiddleware("cardId"),
+    validateSchemaMiddleware(schemas.passwordSchema),
+    controller.unblockCard
+);
+
+cardsRouter.put(
+    "/cards/:cardId/block",
+    ensureNumberOnParamsMiddleware("cardId"),
+    validateSchemaMiddleware(schemas.passwordSchema),
+    controller.blockCard
+);
 
 cardsRouter.put(
     "/cards/:cardId",
     ensureNumberOnParamsMiddleware("cardId"),
     validateSchemaMiddleware(schemas.activationCardSchema),
-    controller.updateCard
+    controller.activateCard
 );
+
 export default cardsRouter;
