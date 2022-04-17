@@ -1,8 +1,8 @@
 import { findById } from "../repositories/employeeRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
 import * as cardRepo from "../repositories/cardRepository.js";
-import * as payments from "../repositories/paymentRepository.js";
-import * as recharges from "../repositories/rechargeRepository.js";
+import * as payment from "../repositories/paymentRepository.js";
+import * as recharge from "../repositories/rechargeRepository.js";
 import * as error from "../utils/errorUtils.js";
 import * as encrypt from "../utils/hashDataUtils.js";
 import faker from "@faker-js/faker";
@@ -51,10 +51,11 @@ export async function activateCard(
 
 export async function findCardTrades(cardId: number) {
     await checkCardExists(cardId);
-    const paymentsData = await payments.findByCardId(cardId);
-    const rechargeData = await recharges.findByCardId(cardId);
+    const transactions = await payment.findByCardId(cardId);
+    const recharges = await recharge.findByCardId(cardId);
+    const balance = await calculateBalance(transactions, recharges);
 
-    return { paymentsData, rechargeData };
+    return { balance, transactions, recharges };
 }
 
 function validateCVV(plainCVV: string, encryptedCVV: string) {
@@ -163,4 +164,23 @@ function concatFormattedName(
             return total;
         }
     }
+}
+
+async function calculateBalance(transactions: any[], recharges: any[]) {
+    const paymentTotal = returnTotalSum(transactions);
+    const rechargeTotal = returnTotalSum(recharges);
+
+    return rechargeTotal - paymentTotal;
+}
+
+function returnTotalSum(array: any[]) {
+    let totalSum = 0;
+    if (array.length === 0) {
+        return totalSum;
+    }
+    for (const item of array) {
+        totalSum += item.amount;
+    }
+
+    return totalSum;
 }

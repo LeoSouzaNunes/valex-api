@@ -27,6 +27,6 @@ export async function updateCard(req: Request, res: Response) {
 
 export async function getCardTrades(req: Request, res: Response) {
     const cardId = res.locals.param;
-    const data = await service.findCardTrades(cardId);
-    res.status(200).send(data);
+    const trades = await service.findCardTrades(cardId);
+    res.status(200).send(trades);
 }
