@@ -13,6 +13,7 @@ export async function depositsPayment(
     password: string
 ) {
     const cardData = await checkCardExists(cardId);
+    checkCardIsUnblocked(cardData);
     checkCardIsExpired(cardData.expirationDate);
     validatePassword(password, cardData.password);
     await validateBusiness(businessId, cardData.type);
@@ -107,4 +108,10 @@ function returnTotalSum(array: any[]) {
     }
 
     return totalSum;
+}
+
+function checkCardIsUnblocked({ isBlocked }) {
+    if (isBlocked) {
+        throw error.unauthorized("Card blocked.");
+    }
 }
