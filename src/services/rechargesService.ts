@@ -4,8 +4,9 @@ import * as error from "../utils/errorUtils.js";
 import dayjs from "dayjs";
 
 export async function rechargesCard(cardId: number, amount: number) {
-    const { expirationDate } = await checkCardExists(cardId);
-    checkCardIsExpired(expirationDate);
+    const cardData = await checkCardExists(cardId);
+    isOnlineCard(cardData);
+    checkCardIsExpired(cardData);
     await rechargeRepo.insert({ cardId, amount });
 }
 
@@ -17,7 +18,7 @@ async function checkCardExists(cardId: number) {
     return cardData;
 }
 
-function checkCardIsExpired(expirationDate: string) {
+function checkCardIsExpired({ expirationDate }) {
     const formattedLimitDate = formatDate(expirationDate);
     const actualDate = dayjs().valueOf();
     const limitDate = dayjs(`${formattedLimitDate}`).valueOf();
@@ -31,4 +32,10 @@ function formatDate(shortenedDate: string) {
     const datePieces = shortenedDate.split("/");
     const formattedDate = `20${datePieces[1]}-${datePieces[0]}-15`;
     return formattedDate;
+}
+
+function isOnlineCard({ isVirtual }) {
+    if (isVirtual) {
+        throw error.badRequest("You can't recharge virtual cards.");
+    }
 }

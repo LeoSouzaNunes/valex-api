@@ -45,4 +45,17 @@ cardsRouter.put(
     controller.activateCard
 );
 
+cardsRouter.post(
+    "/cards/online",
+    validateSchemaMiddleware(schemas.onlineCardSchema),
+    controller.postOnlineCard
+);
+
+cardsRouter.delete(
+    "/cards/online/:cardId",
+    validateSchemaMiddleware(schemas.passwordSchema),
+    ensureNumberOnParamsMiddleware("cardId"),
+    controller.deleteOnlineCard
+);
+
 export default cardsRouter;

@@ -61,6 +61,7 @@ export async function findCardTrades(cardId: number) {
 export async function unblockCard(cardId: number, password: string) {
     const cardData = await checkCardExists(cardId);
     checkCardIsExpired(cardData.expirationDate);
+    checkIsActiveCard(cardData.password);
     await checkIsBlockedCard(cardData);
     validatePassword(password, cardData.password);
     await cardRepo.update(cardId, { ...cardData, isBlocked: false });
@@ -69,14 +70,63 @@ export async function unblockCard(cardId: number, password: string) {
 export async function blockCard(cardId: number, password: string) {
     const cardData = await checkCardExists(cardId);
     checkCardIsExpired(cardData.expirationDate);
+    checkIsActiveCard(cardData.password);
     await checkIsUnblockedCard(cardData);
     validatePassword(password, cardData.password);
     await cardRepo.update(cardId, { ...cardData, isBlocked: true });
 }
 
+export async function createOnlineCard(cardId: number, password: string) {
+    const cardData = await checkCardExists(cardId);
+    checkIsActiveCard(cardData.password);
+    checkIsOnlineCard(cardData);
+    await checkAlreadyHasOnlineCard(cardData);
+    checkCardIsUnblocked(cardData);
+    validatePassword(password, cardData.password);
+    const [safeOnlineCardData, plainOnlineCardData] = formatOnlineCardData(
+        cardId,
+        cardData.cardholderName,
+        cardData.password,
+        cardData.employeeId,
+        cardData.type
+    );
+    await cardRepo.insert(safeOnlineCardData);
+
+    return plainOnlineCardData;
+}
+
+export async function deleteOnlineCard(cardId: number, password: string) {
+    const onlineCardData = await checkCardExists(cardId);
+    ensureItsOnlineCard(onlineCardData);
+    validatePassword(password, onlineCardData.password);
+    await cardRepo.remove(cardId);
+}
+
+function ensureItsOnlineCard({ isVirtual }) {
+    if (!isVirtual) {
+        throw error.badRequest("You can't delete non online cards.");
+    }
+}
+
+async function checkAlreadyHasOnlineCard({ employeeId, type }) {
+    const cardCount = await cardRepo.findOnlineAndCommonCardByTypeAndEmployeeId(
+        type,
+        employeeId
+    );
+    if (cardCount >= 2) {
+        throw error.conflict("Already has an online card.");
+    }
+}
+
 function validateCVV(plainCVV: string, encryptedCVV: string) {
     if (!encrypt.validateHashData(plainCVV, encryptedCVV)) {
         throw error.unauthorized("Invalid CVV.");
+    }
+}
+
+function checkIsOnlineCard({ isVirtual }) {
+    if (isVirtual) {
+        throw error.badRequest("Online cards can't register online cards.");
     }
 }
 
@@ -216,5 +266,47 @@ async function checkIsUnblockedCard({ isBlocked }) {
 function validatePassword(plainPassword: string, encryptedPassword: string) {
     if (!encrypt.validateHashData(plainPassword, encryptedPassword)) {
         throw error.unauthorized("Invalid password.");
+    }
+}
+
+function checkCardIsUnblocked({ isBlocked }) {
+    if (isBlocked) {
+        throw error.unauthorized("Card blocked.");
+    }
+}
+
+function formatOnlineCardData(
+    cardId: number,
+    cardholderName: string,
+    password: string,
+    employeeId: number,
+    type: cardRepo.TransactionTypes
+) {
+    const plainSecurityCode = faker.finance.creditCardCVV();
+
+    const number = faker.finance.creditCardNumber("Mastercard");
+    const expirationDate = dayjs().add(5, "year").format("MM/YY");
+
+    const securityCode = encrypt.hashData(plainSecurityCode);
+
+    const safeCardData = {
+        employeeId,
+        number,
+        cardholderName,
+        securityCode,
+        expirationDate,
+        password,
+        isVirtual: true,
+        originalCardId: cardId,
+        isBlocked: false,
+        type,
+    };
+
+    return [safeCardData, { ...safeCardData, securityCode: plainSecurityCode }];
+}
+
+function checkIsActiveCard(cardSavedPassword: any) {
+    if (!cardSavedPassword) {
+        throw error.unauthorized("You must activate your card first.");
     }
 }

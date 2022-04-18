@@ -13,6 +13,7 @@ export async function depositsPayment(
     password: string
 ) {
     const cardData = await checkCardExists(cardId);
+    isOnlineCard(cardData);
     checkCardIsUnblocked(cardData);
     checkCardIsExpired(cardData.expirationDate);
     validatePassword(password, cardData.password);
@@ -34,12 +35,26 @@ export async function depositsOnlinePayment(
         name,
         expirationDate
     );
+    const cardId = onlineCardHandler(cardData.originalCardId, cardData.id);
     validateCVV(cvv, cardData.securityCode);
     checkCardIsUnblocked(cardData);
     checkCardIsExpired(expirationDate);
     await validateBusiness(businessId, cardData.type);
-    const totalBalance = await calculateBalance(cardData.id);
-    await approvePayment(totalBalance, amount, cardData.id, businessId);
+    const totalBalance = await calculateBalance(cardId);
+    await approvePayment(totalBalance, amount, cardId, businessId);
+}
+
+function onlineCardHandler(originalCardId: number, cardId: number) {
+    if (!originalCardId) {
+        return cardId;
+    }
+    return originalCardId;
+}
+
+function isOnlineCard({ isVirtual }) {
+    if (isVirtual) {
+        throw error.badRequest("You can't pay in POS with online cards.");
+    }
 }
 
 async function approvePayment(

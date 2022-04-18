@@ -4,6 +4,7 @@ import rechargeSchema from "./rechargeSchema.js";
 import paymentSchema from "./paymentSchema.js";
 import passwordSchema from "./passwordSchema.js";
 import onlinePaymentSchema from "./onlinePaymentSchema.js";
+import onlineCardSchema from "./onlineCardSchema.js";
 
 export {
     activationCardSchema,
@@ -12,4 +13,5 @@ export {
     paymentSchema,
     passwordSchema,
     onlinePaymentSchema,
+    onlineCardSchema,
 };

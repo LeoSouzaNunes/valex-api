@@ -46,3 +46,20 @@ export async function blockCard(req: Request, res: Response) {
     await service.blockCard(cardId, password);
     res.sendStatus(200);
 }
+
+export async function postOnlineCard(req: Request, res: Response) {
+    const { cardId, password } = req.body;
+    const onlineCardData = await service.createOnlineCard(
+        Number(cardId),
+        password
+    );
+    res.status(201).send(onlineCardData);
+}
+
+export async function deleteOnlineCard(req: Request, res: Response) {
+    const cardId = res.locals.param;
+    const { password } = req.body;
+
+    await service.deleteOnlineCard(cardId, password);
+    res.sendStatus(204);
+}

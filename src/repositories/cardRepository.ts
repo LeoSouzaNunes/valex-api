@@ -51,6 +51,18 @@ export async function findByTypeAndEmployeeId(
     return result.rows[0];
 }
 
+export async function findOnlineAndCommonCardByTypeAndEmployeeId(
+    type: TransactionTypes,
+    employeeId: number
+) {
+    const result = await connection.query<Card, [TransactionTypes, number]>(
+        `SELECT * FROM cards WHERE type=$1 AND "employeeId"=$2`,
+        [type, employeeId]
+    );
+
+    return result.rowCount;
+}
+
 export async function findByEmployeeId(employeeId: number) {
     const result = await connection.query<Card, [number]>(
         `SELECT * FROM cards WHERE "employeeId"=$1`,
